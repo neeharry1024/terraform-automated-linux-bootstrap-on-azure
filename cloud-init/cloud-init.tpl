@@ -1,0 +1,47 @@
+#cloud-config
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - nginx
+  - docker.io
+  - jq
+
+write_files:
+
+  - path: /var/www/html/index.html
+    permissions: '0644'
+    content: |
+      ${custom_html}
+
+  - path: /usr/local/bin/health-check.sh
+    permissions: '0755'
+    content: |
+      ${health_script}
+
+  - path: /usr/local/bin/startup.sh
+    permissions: '0755'
+    content: |
+      ${startup_script}
+
+  - path: /etc/ssh/sshd_config.d/custom.conf
+    permissions: '0644'
+    content: |
+      PasswordAuthentication no
+      PermitRootLogin no
+
+runcmd:
+  - systemctl enable nginx
+  - systemctl start nginx
+
+  - systemctl enable docker
+  - systemctl start docker
+
+  - bash /usr/local/bin/startup.sh
+
+  - curl -sL https://aka.ms/InstallAzureMonitorAgentLinux | bash
+
+  - mkdir -p /var/log/custom
+
+  - echo "Bootstrap completed" >> /var/log/custom/bootstrap.log
